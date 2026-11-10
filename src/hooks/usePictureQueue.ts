@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { useRemote } from "@/hooks/useRemoteState"
+import { useRemote, useRemoteSnapshot } from "@/hooks/useRemoteState"
 import type { QueryName } from "@/types/remote"
 
 /** Several at once, so a long list fills in steadily without flooding the connection. */
@@ -24,6 +24,8 @@ export function usePictureQueue(query: QueryName, requests: PictureRequest[], ar
   const center = useRef(around)
   const list = useRef(requests)
   const signature = requests.map((r) => r.key).join("|")
+  // pictures that failed while the connection was lost are fetched again once it is back
+  const connected = useRemoteSnapshot().connection === "connected"
 
   useEffect(() => {
     center.current = around
@@ -31,6 +33,9 @@ export function usePictureQueue(query: QueryName, requests: PictureRequest[], ar
   })
 
   useEffect(() => {
+    if (!connected) {
+      return
+    }
     let cancelled = false
     const waiting = new Map<number, PictureRequest>()
     list.current.forEach((r, i) => {
@@ -70,7 +75,7 @@ export function usePictureQueue(query: QueryName, requests: PictureRequest[], ar
     return () => {
       cancelled = true
     }
-  }, [provider, query, signature])
+  }, [provider, query, signature, connected])
 
   return (key) => pictures.get(key)
 }

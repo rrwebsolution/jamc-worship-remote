@@ -103,7 +103,11 @@ export class RemoteSocketService implements RemoteDataProvider {
 
   watchPictures(on: boolean): void {
     this.wantsPictures = on
-    this.sendMessage({ type: "watch", pictures: on })
+    // only once welcomed: before that the desktop refuses it as a bad request and closes for good.
+    // The welcome sends it again when this is still wanted.
+    if (this.snapshot.connection === "connected") {
+      this.sendMessage({ type: "watch", pictures: on })
+    }
   }
 
   retry(): void {

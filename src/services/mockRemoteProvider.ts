@@ -55,6 +55,11 @@ function demoSlidePicture(number: number): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
+function demoCameraPicture(id: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180"><rect width="320" height="180" fill="#0F2A2A"/><text x="160" y="100" fill="#F8FAFC" font-family="sans-serif" font-size="24" text-anchor="middle">${id} · ${new Date().toLocaleTimeString()}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
 function monitor(partial: Partial<MonitorState>): MonitorState {
   return { kind: "EMPTY", title: null, label: null, scene: null, cameras: [], black: false, ...partial }
 }
@@ -187,6 +192,7 @@ export class MockRemoteProvider implements RemoteDataProvider {
       PRESENTATION_THUMBNAIL: "PRESENTATION",
       LYRICS_THUMBNAIL: "LYRICS",
       BIBLE_THUMBNAIL: "BIBLE",
+      CAMERA_PICTURE: "CAMERAS",
       SERVICE_SONGS: "LYRICS",
       SERVICE_BIBLE: "BIBLE",
       SERVICE_PRESENTATIONS: "PRESENTATION",
@@ -201,7 +207,7 @@ export class MockRemoteProvider implements RemoteDataProvider {
           return
         }
         const search = String(params.search ?? "").toLowerCase()
-        const data: unknown = name === "PRESENTATION_THUMBNAIL" ? { src: demoSlidePicture(Number(params.number)) } : name === "LYRICS_THUMBNAIL" || name === "BIBLE_THUMBNAIL" ? { src: demoSlidePicture(Number(params.card) + 1) } : name === "BIBLE_VERSIONS" ? DEMO_BIBLE : name === "BIBLE_VERSES" ? DEMO_VERSES
+        const data: unknown = name === "CAMERA_PICTURE" ? { src: demoCameraPicture(String(params.id)) } : name === "PRESENTATION_THUMBNAIL" ? { src: demoSlidePicture(Number(params.number)) } : name === "LYRICS_THUMBNAIL" || name === "BIBLE_THUMBNAIL" ? { src: demoSlidePicture(Number(params.card) + 1) } : name === "BIBLE_VERSIONS" ? DEMO_BIBLE : name === "BIBLE_VERSES" ? DEMO_VERSES
           : name in DEMO_SAVED ? { service: "Sunday Service", items: DEMO_SAVED[name as keyof typeof DEMO_SAVED] }
           : DEMO_LIBRARY[name as keyof typeof DEMO_LIBRARY].filter((item) => item.title.toLowerCase().includes(search))
         resolve({ ok: true, code: null, data })

@@ -1,6 +1,6 @@
-# JAMC Worship Remote
+# LiveCat Remote
 
-Remote Control for JAMC Worship Presenter: a browser remote for phones, tablets and computers on the same Wi-Fi or LAN.
+Remote Control for LiveCat Multimedia: a browser remote for phones, tablets and computers on the same Wi-Fi or LAN.
 React, Vite, TypeScript, Tailwind CSS. No cloud and no internet needed. All rendering and streaming stay on the Windows
 PC; this only controls it.
 

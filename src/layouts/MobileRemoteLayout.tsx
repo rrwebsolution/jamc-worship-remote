@@ -40,8 +40,8 @@ export function AppHeader({ state, demo }: { state: ConnectionState; demo?: bool
       <div className="flex min-w-0 items-center gap-2">
         <img src="/icons/icon-192.png" alt="" className="size-8 rounded-lg" />
         <div className="min-w-0 leading-tight">
-          <p className="text-[11px] font-bold tracking-widest text-accent-brand">JAMC</p>
-          <h1 className="truncate text-sm font-semibold">Worship Remote</h1>
+          <p className="text-[11px] font-bold tracking-widest text-accent-brand">LIVECAT</p>
+          <h1 className="truncate text-sm font-semibold">Remote</h1>
         </div>
       </div>
       <ConnectionBadge state={state} demo={demo} />

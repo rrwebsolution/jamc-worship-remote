@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Film, Music, Pause, Play, Repeat, Square, Volume2, VolumeX } from "lucide-react"
 import { TakeButton } from "@/components/common/TakeButton"
 import { Badge, BigButton, Card, Page, Skeleton } from "@/components/common/ui"
@@ -7,6 +8,42 @@ import { useCommand, usePermissions, useRemote, useRemoteSnapshot } from "@/hook
 import { clock } from "@/lib/haptics"
 import { cn } from "@/lib/utils"
 
+/**
+ * A slider that follows the desktop's value, except while the finger is on it: then it shows the finger's value, and
+ * only letting go sends one command. Sending on every step disabled the slider mid-drag (busy) and flooded the desktop.
+ */
+function CommitSlider({ value, max, disabled, onCommit, ...rest }: {
+  value: number
+  max: number
+  disabled: boolean
+  onCommit: (value: number) => void
+  id?: string
+  "aria-label"?: string
+}) {
+  const [draft, setDraft] = useState<number | null>(null)
+  const commit = () => {
+    if (draft !== null) {
+      onCommit(draft)
+      setDraft(null)
+    }
+  }
+  return (
+    <input
+      {...rest}
+      type="range"
+      min={0}
+      max={max}
+      value={draft ?? value}
+      disabled={disabled}
+      className="h-8 w-full accent-[var(--brand)]"
+      onChange={(e) => setDraft(Number(e.target.value))}
+      onPointerUp={commit}
+      onTouchEnd={commit}
+      onKeyUp={commit}
+      onBlur={commit}
+    />
+  )
+}
 
 /** What is playing on Program. Every value shown is what the desktop reported: a press changes nothing here until it confirms. */
 export function MediaPage() {
@@ -40,15 +77,12 @@ export function MediaPage() {
           <h2 className="min-w-0 flex-1 truncate font-semibold">{m.title}</h2>
           <Badge kind={m.playing ? "take" : "neutral"}>{m.playing ? "PLAYING" : "PAUSED"}</Badge>
         </div>
-        <input
-          type="range"
-          min={0}
+        <CommitSlider
           max={1000}
           value={m.lengthSeconds > 0 ? Math.round((m.seconds / m.lengthSeconds) * 1000) : 0}
-          disabled={disabled || m.lengthSeconds <= 0}
+          disabled={!canControl || m.lengthSeconds <= 0}
           aria-label="Position"
-          className="h-8 w-full accent-[var(--brand)]"
-          onChange={(e) => send("MEDIA_SEEK", { position: Number(e.target.value) / 1000 })}
+          onCommit={(v) => send("MEDIA_SEEK", { position: v / 1000 })}
         />
         <p className="flex justify-between text-xs text-muted-foreground tabular-nums"><span>{clock(m.seconds)}</span><span>{clock(m.lengthSeconds)}</span></p>
       </Card>
@@ -68,15 +102,12 @@ export function MediaPage() {
       </div>
       <Card className="flex shrink-0 items-center gap-3 p-4">
         <label htmlFor="volume" className="shrink-0 text-sm font-medium">Volume {m.volume}%</label>
-        <input
+        <CommitSlider
           id="volume"
-          type="range"
-          min={0}
           max={100}
           value={m.volume}
-          disabled={disabled}
-          className="h-8 w-full accent-[var(--brand)]"
-          onChange={(e) => send("MEDIA_SET_VOLUME", { volume: Number(e.target.value) })}
+          disabled={!canControl}
+          onCommit={(v) => send("MEDIA_SET_VOLUME", { volume: v })}
         />
       </Card>
       <TakeButton />

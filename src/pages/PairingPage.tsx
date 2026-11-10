@@ -81,18 +81,18 @@ export function PairingPage() {
     if (snapshot.connection === "waiting_approval") {
       return (
         <EmptyState icon={Hourglass} title="Pairing Request Sent">
-          Waiting for approval from JAMC Worship Presenter…
+          Waiting for approval from LiveCat Multimedia…
         </EmptyState>
       )
     }
     if (snapshot.connection === "reconnecting") {
       return (
         <EmptyState icon={WifiOff} title="Unable to connect" action={<>{retry}{change}<TryDemo /></>}>
-          Unable to connect to JAMC Worship Presenter at {snapshot.address}. Check that this device is on the same Wi-Fi and the Remote Server is on. Still trying…
+          Unable to connect to LiveCat Multimedia at {snapshot.address}. Check that this device is on the same Wi-Fi and the Remote Server is on. Still trying…
         </EmptyState>
       )
     }
-    return <EmptyState icon={RefreshCw} title="Connecting">Connecting to JAMC Worship Presenter…</EmptyState>
+    return <EmptyState icon={RefreshCw} title="Connecting">Connecting to LiveCat Multimedia…</EmptyState>
   }
 
   return (

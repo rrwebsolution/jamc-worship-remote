@@ -76,6 +76,17 @@ describe("choosing from the library", () => {
   })
 })
 
+describe("camera pictures", () => {
+  it("come only to a device with Cameras", async () => {
+    const demo = new MockRemoteProvider(0)
+    demo.setRole("Camera Operator")
+    const picture = await demo.query("CAMERA_PICTURE", { id: "cam1" })
+    expect((picture.data as { src: string }).src).toContain("data:image/")
+    demo.setRole("Lyrics Only")
+    await expect(demo.query("CAMERA_PICTURE", { id: "cam1" })).resolves.toEqual({ ok: false, code: "no_permission" })
+  })
+})
+
 describe("Clear", () => {
   it("empties Preview and Program, and has nothing to do twice", async () => {
     const demo = new MockRemoteProvider(0)

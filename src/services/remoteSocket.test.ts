@@ -84,6 +84,16 @@ describe("RemoteSocketService", () => {
     expect(accepted).toEqual(["device-secret"])
   })
 
+  it("asks for the monitor pictures only once welcomed: the desktop refuses a watch before that", () => {
+    const service = create("device-secret")
+    sockets[0].open()
+    service.watchPictures(true) // e.g. the Control page opening while the connection comes back
+    expect(sockets[0].sent.map((m) => m.type)).toEqual(["hello"])
+
+    sockets[0].receive(WELCOME)
+    expect(sockets[0].sent.at(-1)).toEqual({ type: "watch", pictures: true })
+  })
+
   it("reconnects with the device token after losing the connection, and asks nothing of the user", () => {
     const service = create()
     sockets[0].open()

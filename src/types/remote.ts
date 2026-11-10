@@ -1,4 +1,4 @@
-/** The messages between this app and JAMC Worship Presenter (`/ws`). The server side is RemoteServer.java. */
+/** The messages between this app and LiveCat Multimedia (`/ws`). The server side is RemoteServer.java. */
 
 export const PROTOCOL_VERSION = 2
 
@@ -83,6 +83,7 @@ export type QueryName =
   | "SERVICES"
   | "LYRICS_THUMBNAIL"
   | "BIBLE_THUMBNAIL"
+  | "CAMERA_PICTURE"
   | "SERVICE_SONGS"
   | "SERVICE_BIBLE"
   | "SERVICE_PRESENTATIONS"
