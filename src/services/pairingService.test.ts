@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { chooseServer, forgetDeviceToken, readPairing, savePaired, webSocketUrl } from "@/services/pairingService"
+import { chooseServer, forgetDeviceToken, forgetPairingToken, readPairing, savePaired, webSocketUrl } from "@/services/pairingService"
 
 const page = (url: string, servedByPresenter = true, devServer?: string) => ({ url, servedByPresenter, devServer })
 const QR = page("http://192.168.1.15:8080/pair?token=abc")
@@ -40,6 +40,14 @@ describe("pairing", () => {
       deviceToken: "device-secret",
     })
     expect(readPairing(page("http://localhost:5173/", false))?.deviceToken).toBe("device-secret")
+  })
+
+  it("keeps the QR code's token that worked, so a forgotten device can ask again; drops it when it stops pairing", () => {
+    savePaired("192.168.1.15:8080", "device-secret", "abc")
+    expect(readPairing(page("http://192.168.1.15:8080/"))?.pairingToken).toBe("abc")
+    expect(readPairing(page("http://192.168.1.15:8080/pair?token=new"))?.pairingToken).toBe("new") // a fresh scan wins
+    forgetPairingToken("192.168.1.15:8080")
+    expect(readPairing(page("http://192.168.1.15:8080/"))?.pairingToken).toBeNull()
   })
 
   it("keeps the device token when accepted again without a new one", () => {

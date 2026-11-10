@@ -9,6 +9,7 @@ const LAST_SERVER_KEY = "jamc.remote.lastServer"
 const CHOSEN_SERVER_KEY = "jamc.remote.chosenServer"
 const DEVICE_TOKENS_KEY = "jamc.remote.deviceTokens"
 const DEVICE_NAME_KEY = "jamc.remote.deviceName"
+const PAIRING_TOKENS_KEY = "jamc.remote.pairingTokens"
 const SERVER_PATTERN = /^[\w.-]+(:\d{1,5})?$|^\[[0-9a-fA-F:.]+\](:\d{1,5})?$/
 
 export interface PairingInfo {
@@ -47,13 +48,25 @@ function write(key: string, value: string | null): void {
   }
 }
 
-function deviceTokens(): Record<string, string> {
+function tokensAt(key: string): Record<string, string> {
   try {
-    const parsed: unknown = JSON.parse(read(DEVICE_TOKENS_KEY) ?? "{}")
+    const parsed: unknown = JSON.parse(read(key) ?? "{}")
     return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {}
   } catch {
     return {}
   }
+}
+
+function deviceTokens(): Record<string, string> {
+  return tokensAt(DEVICE_TOKENS_KEY)
+}
+
+/**
+ * The QR code's pairing token, kept per server after it worked: when the operator forgets this device, it can ask to be
+ * allowed again by itself. It only pairs until the operator makes a new QR code or restarts the desktop app.
+ */
+function pairingTokens(): Record<string, string> {
+  return tokensAt(PAIRING_TOKENS_KEY)
 }
 
 export function isValidServer(server: string): boolean {
@@ -78,17 +91,27 @@ export function readPairing({ url, servedByPresenter, devServer }: PageContext):
   }
   return {
     server,
-    pairingToken: page.searchParams.get("token"),
+    pairingToken: page.searchParams.get("token") ?? pairingTokens()[server] ?? null,
     deviceToken: deviceTokens()[server] ?? null,
   }
 }
 
-/** Accepted: remember the server and the device's token (when one was issued). */
-export function savePaired(server: string, deviceToken: string | undefined): void {
+/** Accepted: remember the server, the device's token (when one was issued) and the pairing token that worked. */
+export function savePaired(server: string, deviceToken: string | undefined, pairingToken?: string | null): void {
   write(LAST_SERVER_KEY, server)
   if (deviceToken) {
     write(DEVICE_TOKENS_KEY, JSON.stringify({ ...deviceTokens(), [server]: deviceToken }))
   }
+  if (pairingToken) {
+    write(PAIRING_TOKENS_KEY, JSON.stringify({ ...pairingTokens(), [server]: pairingToken }))
+  }
+}
+
+/** The kept pairing token no longer pairs (a new QR code, or the desktop app restarted). */
+export function forgetPairingToken(server: string): void {
+  const tokens = pairingTokens()
+  delete tokens[server]
+  write(PAIRING_TOKENS_KEY, JSON.stringify(tokens))
 }
 
 /** The server no longer knows this device. */

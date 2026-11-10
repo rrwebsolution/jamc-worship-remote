@@ -1,6 +1,7 @@
 import {
   clearPairingFromAddressBar,
   forgetDeviceToken,
+  forgetPairingToken,
   savedDeviceName,
   savePaired,
   webSocketUrl,
@@ -17,9 +18,10 @@ export function createWebSocketProvider({ server, deviceToken, pairingToken }: P
     pairingToken,
     deviceName: savedDeviceName(),
     onAccepted: (issued) => {
-      savePaired(server, issued)
+      savePaired(server, issued, pairingToken)
       clearPairingFromAddressBar()
     },
     onDeviceTokenInvalid: () => forgetDeviceToken(server),
+    onPairingTokenInvalid: () => forgetPairingToken(server),
   })
 }

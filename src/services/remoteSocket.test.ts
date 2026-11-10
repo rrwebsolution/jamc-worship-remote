@@ -34,6 +34,7 @@ describe("RemoteSocketService", () => {
   let sockets: FakeSocket[]
   let accepted: (string | undefined)[]
   let tokenInvalid: number
+  let pairingInvalid: number
 
   function create(deviceToken: string | null = null, pairingToken: string | null = "qr-token") {
     const service = new RemoteSocketService({
@@ -48,6 +49,7 @@ describe("RemoteSocketService", () => {
       },
       onAccepted: (token) => accepted.push(token),
       onDeviceTokenInvalid: () => tokenInvalid++,
+      onPairingTokenInvalid: () => pairingInvalid++,
     })
     service.start()
     return service
@@ -59,6 +61,7 @@ describe("RemoteSocketService", () => {
     sockets = []
     accepted = []
     tokenInvalid = 0
+    pairingInvalid = 0
   })
 
   afterEach(() => {
@@ -163,13 +166,38 @@ describe("RemoteSocketService", () => {
     expect(sockets).toHaveLength(2)
   })
 
-  it("loses its token when forgotten", () => {
-    const service = create()
+  it("when forgotten, loses its token and asks to be allowed again with the QR code's token", () => {
+    const service = create("device-secret", "qr-token")
+    sockets[0].open()
+    sockets[0].receive(WELCOME)
+    sockets[0].receive({ type: "closed", reason: "forgotten" })
+    expect(tokenInvalid).toBe(1)
+    expect(service.getSnapshot()).toMatchObject({ connection: "connecting", stopReason: null, permissions: [] })
+
+    vi.advanceTimersByTime(1000)
+    expect(sockets).toHaveLength(2)
+    sockets[1].open()
+    expect(sockets[1].sent[0]).toEqual({ type: "hello", protocol: 2, pairingToken: "qr-token" }) // no device token any more
+    sockets[1].receive({ type: "pending" })
+    expect(service.getSnapshot().connection).toBe("waiting_approval") // the operator sees the Allow request
+  })
+
+  it("when forgotten without a QR code token, it stops and asks for the QR code", () => {
+    const service = create("device-secret", null)
     sockets[0].open()
     sockets[0].receive(WELCOME)
     sockets[0].receive({ type: "closed", reason: "forgotten" })
     expect(service.getSnapshot().stopReason).toBe("forgotten")
-    expect(tokenInvalid).toBe(1)
+    vi.advanceTimersByTime(5000)
+    expect(sockets).toHaveLength(1)
+  })
+
+  it("forgets a QR code token that no longer pairs (new code, or the desktop restarted)", () => {
+    const service = create(null, "old-qr-token")
+    sockets[0].open()
+    sockets[0].receive({ type: "rejected", code: "pairing_required" })
+    expect(service.getSnapshot().stopReason).toBe("needs_pairing")
+    expect(pairingInvalid).toBe(1)
   })
 
   it("follows permission, lock and state changes from the desktop", () => {

@@ -29,6 +29,8 @@ export interface SocketOptions {
   onAccepted?: (deviceToken: string | undefined) => void
   /** The server no longer knows this device: its saved token is useless. */
   onDeviceTokenInvalid?: () => void
+  /** The kept pairing token no longer pairs (a new QR code, or the desktop restarted). */
+  onPairingTokenInvalid?: () => void
   createSocket?: (url: string) => WebSocket
 }
 
@@ -62,12 +64,14 @@ export class RemoteSocketService implements RemoteDataProvider {
   private nextRequestId = 1
   private started = false
   private deviceToken: string | null
+  private pairingToken: string | null
   private wantsPictures = false
   private readonly options: SocketOptions
 
   constructor(options: SocketOptions) {
     this.options = options
     this.deviceToken = options.deviceToken
+    this.pairingToken = options.pairingToken
     this.snapshot = {
       connection: "connecting",
       stopReason: null,
@@ -182,8 +186,8 @@ export class RemoteSocketService implements RemoteDataProvider {
     if (this.deviceToken) {
       hello.deviceToken = this.deviceToken
     }
-    if (this.options.pairingToken) {
-      hello.pairingToken = this.options.pairingToken
+    if (this.pairingToken) {
+      hello.pairingToken = this.pairingToken
     }
     if (this.options.deviceName) {
       hello.name = this.options.deviceName
@@ -231,12 +235,17 @@ export class RemoteSocketService implements RemoteDataProvider {
       case "rejected":
         if (message.code === "pairing_required") {
           this.dropDeviceToken()
+          this.dropPairingToken() // a new QR code, or the desktop restarted: only scanning again pairs now
         }
         this.halt(REJECTIONS[message.code] ?? "unsupported")
         break
       case "closed":
         if (message.reason === "forgotten") {
           this.dropDeviceToken()
+          if (this.pairingToken) {
+            this.requestAgain() // the operator sees the Allow request again and decides
+            break
+          }
         }
         this.halt(message.reason === "disabled" ? "remotes_disabled" : message.reason === "forgotten" ? "forgotten" : "disconnected")
         break
@@ -248,6 +257,31 @@ export class RemoteSocketService implements RemoteDataProvider {
   private dropDeviceToken(): void {
     this.deviceToken = null
     this.options.onDeviceTokenInvalid?.()
+  }
+
+  private dropPairingToken(): void {
+    if (this.pairingToken) {
+      this.pairingToken = null
+      this.options.onPairingTokenInvalid?.()
+    }
+  }
+
+  /**
+   * Forgotten by the operator: ask to be allowed again with the QR code's pairing token. The desktop shows the
+   * request; Deny stops here, Allow makes this a new trusted device. A stale token ends at "Scan the QR code".
+   */
+  private requestAgain(): void {
+    this.clearTimers()
+    this.closeSocket()
+    this.failPending()
+    this.retries = 0
+    this.update({ connection: "connecting", stopReason: null, state: {}, permissions: [] })
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null
+      if (this.started) {
+        this.open()
+      }
+    }, 1000)
   }
 
   /** The desktop said no: trying again by itself would not help. */
