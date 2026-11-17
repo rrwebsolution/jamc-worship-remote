@@ -9,6 +9,7 @@ const REQUIRED: Record<CommandName, Permission[]> = {
   TAKE: ["TAKE"],
   SET_SCENE_PREVIEW: ["SCENES", "PREVIEW"],
   SET_CAMERA_PREVIEW: ["CAMERAS", "PREVIEW"],
+  SET_CAMERA_POWER: ["CAMERAS", "PREVIEW"],
   PRESENTATION_FIRST: ["PRESENTATION"],
   PRESENTATION_PREVIOUS: ["PRESENTATION"],
   PRESENTATION_NEXT: ["PRESENTATION"],
@@ -58,6 +59,8 @@ const MESSAGES: Record<string, string> = {
   nothing_in_preview: "Nothing in Preview to take.",
   scene_unavailable: "That scene is no longer available.",
   camera_unavailable: "That camera is not available.",
+  camera_off: "That camera is off. Switch it on first.",
+  camera_in_use: "That camera is on Preview or Program, so it stays on.",
   no_camera_scene: "The desktop has no scene with a camera.",
   no_presentation: "No presentation is open on the desktop.",
   no_song: "No lyrics are open on the desktop.",
@@ -84,6 +87,7 @@ export function createCommandService(provider: RemoteDataProvider) {
     restoreProjector: () => send("RESTORE_PROJECTOR"),
     scenePreview: (id: number) => send("SET_SCENE_PREVIEW", { id }),
     cameraPreview: (id: string) => send("SET_CAMERA_PREVIEW", { id }),
+    cameraPower: (id: string, on: boolean) => send("SET_CAMERA_POWER", { id, on }),
     servicePreview: (index: number) => send("SET_SERVICE_PREVIEW", { index }),
   }
 }

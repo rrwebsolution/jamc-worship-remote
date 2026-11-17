@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react"
-import { ChevronsLeft, ChevronsRight, Library, MonitorOff, MonitorUp } from "lucide-react"
+import { ChevronsLeft, ChevronsRight, Library, MonitorUp } from "lucide-react"
 import { ScreenView } from "@/components/common/ScreenView"
 import { TakeButton } from "@/components/common/TakeButton"
-import { ConfirmDialog, Page, Skeleton } from "@/components/common/ui"
+import { Page, Skeleton } from "@/components/common/ui"
 import { useClear } from "@/components/common/useClear"
 import { BiblePicker, SongPicker } from "@/components/library/LibraryPickers"
 import { useCursor } from "@/hooks/useCursor"
@@ -174,7 +174,7 @@ const TABS: { id: "lyrics" | "bible"; label: string; permission: Permission }[] 
 
 const SEGMENT = "flex h-11 items-center gap-1.5 px-3 text-sm font-semibold touch-manipulation disabled:opacity-40"
 
-/** Black and Clear, side by side at the top, and what is open or a way to choose something else. */
+/** Clear (and Restore while the projector is black) at the top, and what is open or a way to choose something else. */
 function TopBar({ clear, onCleared, browse, browseLabel, children }: {
   clear: CommandName
   onCleared: (cleared: boolean) => void
@@ -187,7 +187,6 @@ function TopBar({ clear, onCleared, browse, browseLabel, children }: {
   const { canControl, has } = usePermissions()
   const { run, busy } = useCommand()
   const clearing = useClear(clear, onCleared)
-  const [confirming, setConfirming] = useState(false)
   const black = state.projector?.black ?? false
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-border bg-panel px-2 py-1.5">
@@ -198,34 +197,16 @@ function TopBar({ clear, onCleared, browse, browseLabel, children }: {
       )}
       <div className="min-w-0 flex-1">{children}</div>
       <div className="flex shrink-0 divide-x divide-border overflow-hidden rounded-lg border border-border bg-secondary">
-        {has("BLACK_PROJECTOR") && (
-          black ? (
-            <button type="button" disabled={!canControl || busy} onClick={() => void run(remote.commands.restoreProjector)} className={cn(SEGMENT, "bg-live text-white")}>
-              <MonitorUp className="size-4" aria-hidden /> Restore
-            </button>
-          ) : (
-            <button type="button" disabled={!canControl || busy} onClick={() => setConfirming(true)} className={SEGMENT}>
-              <MonitorOff className="size-4" aria-hidden /> Black
-            </button>
-          )
+        {/* No Black button on the remote (user's request); Restore only while the computer has blacked the projector. */}
+        {has("BLACK_PROJECTOR") && black && (
+          <button type="button" disabled={!canControl || busy} onClick={() => void run(remote.commands.restoreProjector)} className={cn(SEGMENT, "bg-live text-white")}>
+            <MonitorUp className="size-4" aria-hidden /> Restore
+          </button>
         )}
         <button type="button" disabled={clearing.disabled} onClick={clearing.clear} className={SEGMENT}>
           Clear
         </button>
       </div>
-      {confirming && (
-        <ConfirmDialog
-          title="Black the projector?"
-          confirmLabel="Black"
-          onCancel={() => setConfirming(false)}
-          onConfirm={() => {
-            setConfirming(false)
-            void run(remote.commands.blackProjector)
-          }}
-        >
-          The room's screen goes black. Program, the livestream and recording continue.
-        </ConfirmDialog>
-      )}
     </div>
   )
 }

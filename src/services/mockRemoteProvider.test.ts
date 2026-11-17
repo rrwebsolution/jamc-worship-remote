@@ -24,6 +24,15 @@ describe("Demo Mode", () => {
     expect(s.cameras!.find((c) => c.id === "cam3")!.status).toBe("PREVIEW")
   })
 
+  it("a camera that is off must be switched on before it can go to Preview", async () => {
+    const demo = new MockRemoteProvider(0)
+    await expect(demo.send("SET_CAMERA_PREVIEW", { id: "cam5" })).resolves.toEqual({ ok: false, code: "camera_off" })
+    await expect(demo.send("SET_CAMERA_POWER", { id: "cam5", on: true })).resolves.toEqual({ ok: true, code: null })
+    expect(demo.getSnapshot().state.cameras!.find((c) => c.id === "cam5")!.on).toBe(true)
+    await expect(demo.send("SET_CAMERA_PREVIEW", { id: "cam5" })).resolves.toEqual({ ok: true, code: null })
+    await expect(demo.send("SET_CAMERA_POWER", { id: "cam5", on: false })).resolves.toEqual({ ok: false, code: "camera_in_use" })
+  })
+
   it("refuses an offline camera, and what the role may not do, like the desktop", async () => {
     const demo = new MockRemoteProvider(0)
     await expect(demo.send("SET_CAMERA_PREVIEW", { id: "cam4" })).resolves.toEqual({ ok: false, code: "camera_unavailable" })

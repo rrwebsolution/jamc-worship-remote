@@ -37,3 +37,24 @@ export const toastStore = {
     setTimeout(() => publish(toasts.filter((t) => t.id !== id)), 3500)
   },
 }
+
+let selectedCamera: string | null = null
+const cameraListeners = new Set<() => void>()
+
+/**
+ * The camera tapped once on this device: only marked (white border), nothing sent. PREVIEW sends it to Preview,
+ * TAKE puts it on Program. A double tap sends it to Preview at once. Kept here so the grid and the buttons share it.
+ */
+export const cameraSelectionStore = {
+  subscribe(listener: () => void): () => void {
+    cameraListeners.add(listener)
+    return () => cameraListeners.delete(listener)
+  },
+  get: (): string | null => selectedCamera,
+  set(id: string | null): void {
+    if (selectedCamera !== id) {
+      selectedCamera = id
+      cameraListeners.forEach((listener) => listener())
+    }
+  },
+}

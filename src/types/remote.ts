@@ -41,6 +41,7 @@ export type CommandName =
   | "TAKE"
   | "SET_SCENE_PREVIEW"
   | "SET_CAMERA_PREVIEW"
+  | "SET_CAMERA_POWER"
   | "PRESENTATION_FIRST"
   | "PRESENTATION_PREVIOUS"
   | "PRESENTATION_NEXT"
@@ -208,6 +209,8 @@ export interface CameraInfo {
   id: string
   name: string
   status: "READY" | "PREVIEW" | "LIVE" | "OFFLINE"
+  /** The camera's on / off switch, the same one as on the desktop's Camera page. Every camera starts off. */
+  on: boolean
 }
 
 export interface MediaState {

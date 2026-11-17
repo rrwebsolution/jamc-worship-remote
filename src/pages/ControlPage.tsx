@@ -5,7 +5,7 @@ import { BigButton, Page } from "@/components/common/ui"
 import { MonitorPair } from "@/components/monitors/Monitors"
 import { useCommand, usePermissions, useRemote, useRemoteSnapshot } from "@/hooks/useRemoteState"
 import { haptic } from "@/lib/haptics"
-import { CameraGrid } from "@/pages/CamerasPage"
+import { CameraGrid, CameraPreviewButton } from "@/pages/CamerasPage"
 import { SceneList } from "@/pages/ScenesPage"
 import { ServiceList } from "@/pages/ServicePage"
 import type { CommandName } from "@/types/remote"
@@ -51,6 +51,8 @@ export function ControlPage() {
         <MonitorPair large />
         <div className="mt-auto flex flex-col gap-3 landscape:max-lg:mt-0 landscape:max-lg:gap-2">
           {step && <p className="truncate text-center text-sm text-muted-foreground landscape:max-lg:hidden">{step.label}</p>}
+          {/* a camera marked in the list (white border) waits for PREVIEW or TAKE */}
+          <CameraPreviewButton className="landscape:max-lg:h-14 landscape:max-lg:text-xl" />
           <div className="grid grid-cols-2 items-stretch gap-3 lg:grid-cols-[1fr_2fr_1fr]">
             {step && (
               <BigButton disabled={!canControl || busy} aria-label="Previous" onClick={() => press(step.previous)} className="order-1 landscape:max-lg:h-12">

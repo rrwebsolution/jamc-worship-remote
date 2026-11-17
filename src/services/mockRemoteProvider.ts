@@ -124,10 +124,11 @@ function initialState(): RemoteState {
       { id: 4, name: "Announcement", summary: ["IMAGE", "TEXT"], preview: false, live: false },
     ],
     cameras: [
-      { id: "cam1", name: "CAM 1 · Main", status: "LIVE" },
-      { id: "cam2", name: CAM2, status: "PREVIEW" },
-      { id: "cam3", name: "CAM 3 · Worship", status: "READY" },
-      { id: "cam4", name: "CAM 4 · Audience", status: "OFFLINE" },
+      { id: "cam1", name: "CAM 1 · Main", status: "LIVE", on: true },
+      { id: "cam2", name: CAM2, status: "PREVIEW", on: true },
+      { id: "cam3", name: "CAM 3 · Worship", status: "READY", on: true },
+      { id: "cam4", name: "CAM 4 · Audience", status: "OFFLINE", on: false },
+      { id: "cam5", name: "CAM 5 · Balcony", status: "READY", on: false },
     ],
     media: { title: "Offering Song.mp4", kind: "VIDEO", playing: true, seconds: 42, lengthSeconds: 240, muted: false, volume: 75, loop: false },
     projector: { black: false, open: true },
@@ -278,11 +279,26 @@ export class MockRemoteProvider implements RemoteDataProvider {
         if (!camera || camera.status === "OFFLINE") {
           return "camera_unavailable"
         }
+        if (!camera.on) {
+          return "camera_off"
+        }
         setPreview({ kind: "SCENE", scene: "Camera", cameras: [camera.name] }, {
           cameras: s.cameras?.map((c) =>
             c.status === "OFFLINE" || c.status === "LIVE" ? c : { ...c, status: c.id === camera.id ? "PREVIEW" : "READY" },
           ),
         })
+        return null
+      }
+      case "SET_CAMERA_POWER": {
+        const camera = s.cameras?.find((c) => c.id === payload.id)
+        if (!camera) {
+          return "camera_unavailable"
+        }
+        const on = payload.on === true
+        if (!on && (camera.status === "LIVE" || camera.status === "PREVIEW")) {
+          return "camera_in_use"
+        }
+        this.state({ cameras: s.cameras?.map((c) => (c.id === camera.id ? { ...c, on } : c)) })
         return null
       }
       case "LYRICS_PREVIOUS":
